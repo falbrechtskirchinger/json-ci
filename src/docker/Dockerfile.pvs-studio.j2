@@ -1,0 +1,27 @@
+{% import "inc/apt_macros.j2" as apt with context %}
+{% import "inc/minimize_macros.j2" as min with context %}
+
+FROM json-ci-base-{{ base_codename }} AS json-ci-pvs-studio-{{ version }}
+
+# add PVS Studio key and repository
+{% set pvs_repo="https://cdn.pvs-studio.com" %}
+{% set pvs_key="pvs-studio.gpg" %}
+{{ apt.add_key("%s/etc/pubkey.txt" % pvs_repo, pvs_key, dearmor=True) }}
+{{ apt.add_repo("%s/deb" % pvs_repo, "viva64-release", "pvs-studio", signed_by=pvs_key) }}
+
+# install latest version of PVS Studio
+{{ apt.install(["pvs-studio"]) }}
+
+{% if minimize %}
+
+{{ min.strip_elf(["/usr/bin/plog-converter", "/usr/bin/pvs-studio", "/usr/bin/pvs-studio-analyzer"])}}
+
+# # ls -l /usr/bin/pvs-studio-analyzer /usr/bin/pvs-studio /usr/bin/plog-converter
+# -rwxr-xr-x 1 root root  3264008 Aug 22 09:28 /usr/bin/plog-converter
+# -rwxr-xr-x 1 root root 12399008 Aug 22 09:28 /usr/bin/pvs-studio
+# -rwxr-xr-x 1 root root  3502192 Aug 22 09:28 /usr/bin/pvs-studio-analyzer
+
+{% endif %}
+
+# clean up
+{{ apt.cleanup() }}

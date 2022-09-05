@@ -1,0 +1,99 @@
+{% import "inc/apt_macros.j2" as apt with context %}
+
+{% if not _state.minimize_trace_logs %}
+    {% set _state.minimize_trace_logs = [] %}
+{% endif %}
+{% if not _state.minimize_keep_lists %}
+    {% set _state.minimize_keep_lists = [] %}
+{% endif %}
+
+{% macro trace(cmd) %}
+    {% if not cmd is string %}
+        {% set cmd = cmd | join(" ") %}
+    {% endif %}
+    {% set trace_log = "/tmp/.trace_log.%s" % random_string() %}
+
+    {{ apt.install(ephemeral=["strace"]) }}
+    RUN strace -Afxxyze trace=%file -o {{ trace_log }} {{ cmd }}
+
+    {% do _state.minimize_trace_logs.append(trace_log) %}
+{% endmacro %}
+
+{% macro keep_files(paths) %}
+    {% set list = "/tmp/.keep_list.%s" % random_string() %}
+
+    # no need to pipe results through realpath here as that has to be done in remove_files() anyway
+    RUN find {{ paths | format_as('"$(realpath -m "{}")"') | join(" ") }} -type f
+        | sort -u > {{ keep_list }}
+
+    {% do _state.minimize_keep_lists.append(keep_list) %}
+{% endmacro %}
+
+{% macro remove_unused_files(paths) %}
+    {% set keep_list = "/tmp/.keep_list.%s" % random_string() %}
+    {% set remove_list = "/tmp/.remove_list.%s" % random_string() %}
+
+    # extract file paths from decoded fds and execve calls
+    # all strings are hex-encoded
+    RUN sed -En
+            -e 's/.*= [0-9]+<((\\x[0-9a-f][0-9a-f])*)>/\1/ p'
+            -e 's/^[0-9]+[ ]+execve\("((\\x[0-9a-f][0-9a-f])*)".*/\1/ p'
+            {{ _state.minimize_trace_logs | join(" ") }}
+        # xargs processes backslash escape sequences in non-zero-terminated input
+        | tr -t '\n' '\0'
+        | xargs -rn 1 -0 /usr/bin/printf "%b\n"
+        # combine with keep lists
+        | cat - {{ _state.minimize_keep_lists | join(" ") }}
+        | xargs -rn 1 realpath -m --
+        | sort -u > {{ keep_list }}
+
+    # delete files from paths not listed in merged keep list
+    RUN find {{ paths | format_as('"$(realpath -m "{}")"') | join(" ") }} -type f
+        | xargs -rn 1 realpath --
+        | sort -u >{{ remove_list }}
+    RUN comm -2 -3 {{ remove_list }} {{ keep_list }}
+        | xargs rm --
+
+    # remove broken links
+    RUN find {{ paths | format_as('"$(realpath -m "{}")"') | join(" ") }} -xtype l -exec rm \{\} \+
+
+    RUN rm
+        {{ _state.minimize_trace_logs | join(" ") }}
+        {{ _state.minimize_keep_lists | join(" ") }}
+        {{ keep_list }} {{ remove_list }}
+
+    {% do _state.minimize_trace_logs.clear() %}
+    {% do _state.minimize_keep_lists.clear() %}
+{% endmacro %}
+
+{% macro trace_json(configure_args=[], build_targets=[], test=False, test_args=[]) %}
+    {% set json_dir = "/tmp/json-%s" % random_string() %}
+
+    RUN git clone https://github.com/nlohmann/json.git {{ json_dir }}
+
+    # configure
+    {{ trace(["cmake", "-S", json_dir, "-B", "%s/build" % json_dir, "-G", "Ninja"] + configure_args) }}
+
+    # build
+    {% for target in build_targets %}
+        {{ trace(["cmake", "--build", "%s/build" % json_dir, "-t", target]) }}
+    {% endfor %}
+
+    # test
+    {% if test%}
+        {{ trace(["ctest", "--test-dir", "%s/build" % json_dir, "--output-on-failure", "-j",
+                  "$(NPROC=$(nproc); echo $(( NPROC < 16 ? NPROC : 16 )))",] + test_args) }}
+    {% endif %}
+{% endmacro %}
+
+
+{% macro strip_elf(dirs) %}
+    {{ apt.install(ephemeral=["binutils"]) }}
+
+    RUN find {{ dirs | join(" ") }} -type f -executable
+        | while read f; do
+            if [ "$(head -c4 "$f")" = "$(/usr/bin/printf "%b" "\x7fELF")" ]; then
+                strip "$f";
+            fi
+        done
+{% endmacro %}

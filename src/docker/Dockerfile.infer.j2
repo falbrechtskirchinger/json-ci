@@ -1,0 +1,28 @@
+{% import "inc/apt_macros.j2" as apt with context %}
+{% import "inc/minimize_macros.j2" as min with context %}
+
+FROM json-ci-base-{{ base_codename }} AS json-ci-infer-{{ version }}
+
+{{ apt.install(["tzdata"], ephemeral=["g++", "wget", "xz-utils"]) }}
+
+{% set infer_url = "https://github.com/facebook/infer/releases/download/v{0}/infer-linux64-v{0}.tar.xz" %}
+{% set infer_url = infer_url.format(version) %}
+{% set infer_path = "/opt/infer-linux64-v%s" % version %}
+
+# install Facebook Infer
+RUN wget -q -O - {{ infer_url.format(version) }}
+        | tar -xJC /opt
+RUN ln -sv {{ "%s/bin/infer" % infer_path }} /usr/local/bin/infer
+
+# remove unused files
+{% if minimize %}
+    {{ min.trace_json(configure_args=["-DJSON_CI=ON"], build_targets=["ci_infer"]) }}
+
+    {{ min.keep_files(["/usr/share/zoneinfo/Etc/UTC"]) }}
+    {{ min.remove_unused_files(["/usr/share/zoneinfo", infer_path]) }}
+
+    {{ min.strip_elf([infer_path]) }}
+{% endif %}
+
+# clean up
+{{ apt.cleanup() }}

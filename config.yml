@@ -1,0 +1,35 @@
+ dockerfiles:
+  - template: Dockerfile.base.j2
+    generate: false
+    with:
+      cmake_version: '3.24.1'
+    matrix:
+      - codename: [focal, jammy]
+
+  - template: Dockerfile.cuda.j2
+    with:
+      base_codename: jammy
+      minimize: true
+    matrix:
+      - version: ['11.7']
+
+  - template: Dockerfile.icpc.j2
+    with:
+      base_codename: focal
+      minimize: true
+    matrix:
+      - version: ['2022.1.0']
+
+  - template: Dockerfile.infer.j2
+    with:
+      base_codename: jammy
+      minimize: true
+    matrix:
+      - version: ['1.1.0']
+
+  - template: Dockerfile.pvs-studio.j2
+    with:
+      base_codename: jammy
+      minimize: true
+    matrix:
+      - version: [latest]
