@@ -1,0 +1,67 @@
+FROM ubuntu:jammy AS json-ci-base-jammy
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates gnupg lsb-release wget && \
+    PPA_KEY_FINGERPRINT=$(wget -O - "https://launchpad.net/api/1.0/~ubuntu-toolchain-r/+archive/test" \
+        | sed -En 's/.*"signing_key_fingerprint": "([^"]*)".*/\1/ p') && \
+    wget -O - "https://keyserver.ubuntu.com/pks/lookup?op=get&options=mr&exact=on&search=0x${PPA_KEY_FINGERPRINT}" \
+        | gpg -q --dearmor \
+        >"/usr/share/keyrings/ubuntu_toolchain_r_test.gpg" && \
+    printf "Types: deb\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    printf "URIs: https://ppa.launchpadcontent.net/ubuntu-toolchain-r/test/ubuntu/\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    printf "Suites: $(lsb_release -cs)\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    printf "Components: main\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    printf "Signed-By: /usr/share/keyrings/ubuntu_toolchain_r_test.gpg\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    printf "\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    printf "Types: deb\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    printf "URIs: http://archive.ubuntu.com/ubuntu/\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    printf "Suites: focal\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    printf "Components: main universe\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    printf "\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        git make ninja-build && \
+    wget https://github.com/Kitware/CMake/releases/download/v3.24.1/cmake-3.24.1-Linux-x86_64.sh && \
+    chmod a+x cmake-3.24.1-Linux-x86_64.sh && \
+    ./cmake-3.24.1-Linux-x86_64.sh --skip-license --prefix=/usr/local --exclude-subdir && \
+    rm -v cmake-3.24.1-Linux-x86_64.sh && \
+    rm -v /usr/local/bin/ccmake /usr/local/bin/cmake-gui /usr/local/bin/cpack && \
+    rm -rf /usr/local/doc/cmake /usr/local/man && \
+    apt-get purge -y --autoremove \
+        gnupg wget && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+
+FROM json-ci-base-jammy AS json-ci-pvs-studio-latest
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        gnupg wget && \
+    wget -O - "https://cdn.pvs-studio.com/etc/pubkey.txt" \
+        | gpg -q --dearmor \
+        >"/usr/share/keyrings/pvs-studio.gpg" && \
+    printf "Types: deb\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    printf "URIs: https://cdn.pvs-studio.com/deb\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    printf "Suites: viva64-release\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    printf "Components: pvs-studio\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    printf "Signed-By: /usr/share/keyrings/pvs-studio.gpg\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    printf "\n" >>/etc/apt/sources.list.d/json-ci.sources && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        pvs-studio && \
+    apt-get install -y --no-install-recommends \
+        binutils && \
+    find /usr/bin/plog-converter /usr/bin/pvs-studio /usr/bin/pvs-studio-analyzer -type f -executable \
+        | while read f; do \
+        if [ "$(head -c4 "$f")" = "$(/usr/bin/printf "%b" "\x7fELF")" ]; then \
+        strip "$f"; \
+        fi \
+        done && \
+    apt-get purge -y --autoremove \
+        binutils gnupg wget && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
