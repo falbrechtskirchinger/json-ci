@@ -54,29 +54,29 @@ RUN apt-get update && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         cuda-compiler-11-7 cuda-minimal-build-11-7 && \
-    git clone https://github.com/nlohmann/json.git /tmp/json-XKSkhPlb && \
+    git clone https://github.com/nlohmann/json.git /tmp/json-0000 && \
     apt-get install -y --no-install-recommends \
         strace && \
-    strace -Afxxyze trace=%file -o /tmp/.trace_log.jy6RGZDs cmake -S /tmp/json-XKSkhPlb -B /tmp/json-XKSkhPlb/build -G Ninja -DJSON_CI=ON && \
-    strace -Afxxyze trace=%file -o /tmp/.trace_log.7KIHMasv cmake --build /tmp/json-XKSkhPlb/build -t ci_cuda_example && \
+    strace -Afxxyze trace=%file -o /tmp/.trace_log.0001 cmake -S /tmp/json-0000 -B /tmp/json-0000/build -G Ninja -DJSON_CI=ON && \
+    strace -Afxxyze trace=%file -o /tmp/.trace_log.0002 cmake --build /tmp/json-0000/build -t ci_cuda_example && \
     sed -En \
         -e 's/.*= [0-9]+<((\\x[0-9a-f][0-9a-f])*)>/\1/ p' \
         -e 's/^[0-9]+[ ]+execve\("((\\x[0-9a-f][0-9a-f])*)".*/\1/ p' \
-        /tmp/.trace_log.jy6RGZDs /tmp/.trace_log.7KIHMasv \
+        /tmp/.trace_log.0001 /tmp/.trace_log.0002 \
         | tr -t '\n' '\0' \
         | xargs -rn 1 -0 /usr/bin/printf "%b\n" \
         | cat - \
         | xargs -rn 1 realpath -m -- \
-        | sort -u > /tmp/.keep_list.qnBgFsKa && \
+        | sort -u > /tmp/.keep_list.0003 && \
     find "$(realpath -m "/usr/local/cuda")" -type f \
         | xargs -rn 1 realpath -- \
-        | sort -u >/tmp/.remove_list.IoIMCIeq && \
-    comm -2 -3 /tmp/.remove_list.IoIMCIeq /tmp/.keep_list.qnBgFsKa \
+        | sort -u >/tmp/.remove_list.0004 && \
+    comm -2 -3 /tmp/.remove_list.0004 /tmp/.keep_list.0003 \
         | xargs rm -- && \
     find "$(realpath -m "/usr/local/cuda")" -xtype l -exec rm \{\} \+ && \
     rm \
-        /tmp/.trace_log.jy6RGZDs /tmp/.trace_log.7KIHMasv \
-        /tmp/.keep_list.qnBgFsKa /tmp/.remove_list.IoIMCIeq && \
+        /tmp/.trace_log.0001 /tmp/.trace_log.0002 \
+        /tmp/.keep_list.0003 /tmp/.remove_list.0004 && \
     apt-get purge -y --autoremove \
         strace wget && \
     apt-get clean && \

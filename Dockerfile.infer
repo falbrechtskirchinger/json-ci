@@ -44,31 +44,32 @@ RUN apt-get update && \
     wget -q -O - https://github.com/facebook/infer/releases/download/v1.1.0/infer-linux64-v1.1.0.tar.xz \
         | tar -xJC /opt && \
     ln -sv /opt/infer-linux64-v1.1.0/bin/infer /usr/local/bin/infer && \
-    git clone https://github.com/nlohmann/json.git /tmp/json-uBPQYPPu && \
+    git clone https://github.com/nlohmann/json.git /tmp/json-0000 && \
     apt-get install -y --no-install-recommends \
         strace && \
-    strace -Afxxyze trace=%file -o /tmp/.trace_log.zoTRfKe3 cmake -S /tmp/json-uBPQYPPu -B /tmp/json-uBPQYPPu/build -G Ninja -DJSON_CI=ON && \
-    strace -Afxxyze trace=%file -o /tmp/.trace_log.MtWVXTl7 cmake --build /tmp/json-uBPQYPPu/build -t ci_infer && \
+    strace -Afxxyze trace=%file -o /tmp/.trace_log.0001 cmake -S /tmp/json-0000 -B /tmp/json-0000/build -G Ninja -DCMAKE_CXX_COMPILER_FORCED=TRUE -DJSON_CI=ON && \
+    strace -Afxxyze trace=%file -o /tmp/.trace_log.0002 cmake --build /tmp/json-0000/build -t ci_infer && \
     find "$(realpath -m "/usr/share/zoneinfo/Etc/UTC")" -type f \
-        | sort -u > && \
+        | sort -u > /tmp/.keep_list.0003 && \
     sed -En \
         -e 's/.*= [0-9]+<((\\x[0-9a-f][0-9a-f])*)>/\1/ p' \
         -e 's/^[0-9]+[ ]+execve\("((\\x[0-9a-f][0-9a-f])*)".*/\1/ p' \
-        /tmp/.trace_log.zoTRfKe3 /tmp/.trace_log.MtWVXTl7 \
+        /tmp/.trace_log.0001 /tmp/.trace_log.0002 \
         | tr -t '\n' '\0' \
         | xargs -rn 1 -0 /usr/bin/printf "%b\n" \
-        | cat - \
+        | cat - /tmp/.keep_list.0003 \
         | xargs -rn 1 realpath -m -- \
-        | sort -u > /tmp/.keep_list.B2bSS5y7 && \
+        | sort -u > /tmp/.keep_list.0004 && \
     find "$(realpath -m "/usr/share/zoneinfo")" "$(realpath -m "/opt/infer-linux64-v1.1.0")" -type f \
         | xargs -rn 1 realpath -- \
-        | sort -u >/tmp/.remove_list.iGBj5Ehx && \
-    comm -2 -3 /tmp/.remove_list.iGBj5Ehx /tmp/.keep_list.B2bSS5y7 \
+        | sort -u >/tmp/.remove_list.0005 && \
+    comm -2 -3 /tmp/.remove_list.0005 /tmp/.keep_list.0004 \
         | xargs rm -- && \
     find "$(realpath -m "/usr/share/zoneinfo")" "$(realpath -m "/opt/infer-linux64-v1.1.0")" -xtype l -exec rm \{\} \+ && \
     rm \
-        /tmp/.trace_log.zoTRfKe3 /tmp/.trace_log.MtWVXTl7 \
-        /tmp/.keep_list.B2bSS5y7 /tmp/.remove_list.iGBj5Ehx && \
+        /tmp/.trace_log.0001 /tmp/.trace_log.0002 \
+        /tmp/.keep_list.0003 \
+        /tmp/.keep_list.0004 /tmp/.remove_list.0005 && \
     apt-get install -y --no-install-recommends \
         binutils && \
     find /opt/infer-linux64-v1.1.0 -type f -executable \

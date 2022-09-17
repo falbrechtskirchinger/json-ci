@@ -67,30 +67,30 @@ RUN apt-get update && \
         /opt/intel/oneapi/compiler/latest/linux/lib/oclfpga \
         /opt/intel/oneapi/debugger && \
     . /opt/intel/oneapi/setvars.sh && \
-    git clone https://github.com/nlohmann/json.git /tmp/json-NNKFA6AB && \
+    git clone https://github.com/nlohmann/json.git /tmp/json-0000 && \
     apt-get install -y --no-install-recommends \
         strace && \
-    strace -Afxxyze trace=%file -o /tmp/.trace_log.Pna37OoL cmake -S /tmp/json-NNKFA6AB -B /tmp/json-NNKFA6AB/build -G Ninja -DCMAKE_CXX_COMPILER=icpc -DJSON_FastTests=ON && \
-    strace -Afxxyze trace=%file -o /tmp/.trace_log.KicBfnKd cmake --build /tmp/json-NNKFA6AB/build -t all && \
-    /tmp/json-*/build/tests/test-to_chars_cpp11 && \
+    strace -Afxxyze trace=%file -o /tmp/.trace_log.0001 cmake -S /tmp/json-0000 -B /tmp/json-0000/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=icpc -DJSON_FastTests=ON && \
+    strace -Afxxyze trace=%file -o /tmp/.trace_log.0002 cmake --build /tmp/json-0000/build -t all && \
+    strace -Afxxyze trace=%file -o /tmp/.trace_log.0003 ctest --test-dir /tmp/json-0000/build --output-on-failure -j $(NPROC=$(nproc); echo $(( NPROC < 16 ? NPROC : 16 ))) --exclude-regex test-unicode && \
     sed -En \
         -e 's/.*= [0-9]+<((\\x[0-9a-f][0-9a-f])*)>/\1/ p' \
         -e 's/^[0-9]+[ ]+execve\("((\\x[0-9a-f][0-9a-f])*)".*/\1/ p' \
-        /tmp/.trace_log.Pna37OoL /tmp/.trace_log.KicBfnKd \
+        /tmp/.trace_log.0001 /tmp/.trace_log.0002 /tmp/.trace_log.0003 \
         | tr -t '\n' '\0' \
         | xargs -rn 1 -0 /usr/bin/printf "%b\n" \
         | cat - \
         | xargs -rn 1 realpath -m -- \
-        | sort -u > /tmp/.keep_list.pTEmEM4r && \
+        | sort -u > /tmp/.keep_list.0004 && \
     find "$(realpath -m "/opt/intel")" -type f \
         | xargs -rn 1 realpath -- \
-        | sort -u >/tmp/.remove_list.uSEEGUux && \
-    comm -2 -3 /tmp/.remove_list.uSEEGUux /tmp/.keep_list.pTEmEM4r \
+        | sort -u >/tmp/.remove_list.0005 && \
+    comm -2 -3 /tmp/.remove_list.0005 /tmp/.keep_list.0004 \
         | xargs rm -- && \
     find "$(realpath -m "/opt/intel")" -xtype l -exec rm \{\} \+ && \
     rm \
-        /tmp/.trace_log.Pna37OoL /tmp/.trace_log.KicBfnKd \
-        /tmp/.keep_list.pTEmEM4r /tmp/.remove_list.uSEEGUux && \
+        /tmp/.trace_log.0001 /tmp/.trace_log.0002 /tmp/.trace_log.0003 \
+        /tmp/.keep_list.0004 /tmp/.remove_list.0005 && \
     apt-get install -y --no-install-recommends \
         binutils && \
     find /opt/intel -type f -executable \
