@@ -11,7 +11,7 @@
     {% if not cmd is string %}
         {% set cmd = cmd | join(" ") %}
     {% endif %}
-    {% set trace_log = "/tmp/.trace_log.%s" % random_string() %}
+    {% set trace_log = "/tmp/.trace_log.%s" % counter_string() %}
 
     {{ apt.install(ephemeral=["strace"]) }}
     RUN strace -Afxxyze trace=%file -o {{ trace_log }} {{ cmd }}
@@ -20,7 +20,7 @@
 {% endmacro %}
 
 {% macro keep_files(paths) %}
-    {% set list = "/tmp/.keep_list.%s" % random_string() %}
+    {% set keep_list = "/tmp/.keep_list.%s" % counter_string() %}
 
     # no need to pipe results through realpath here as that has to be done in remove_files() anyway
     RUN find {{ paths | format_as('"$(realpath -m "{}")"') | join(" ") }} -type f
@@ -30,8 +30,8 @@
 {% endmacro %}
 
 {% macro remove_unused_files(paths) %}
-    {% set keep_list = "/tmp/.keep_list.%s" % random_string() %}
-    {% set remove_list = "/tmp/.remove_list.%s" % random_string() %}
+    {% set keep_list = "/tmp/.keep_list.%s" % counter_string() %}
+    {% set remove_list = "/tmp/.remove_list.%s" % counter_string() %}
 
     # extract file paths from decoded fds and execve calls
     # all strings are hex-encoded
@@ -67,7 +67,7 @@
 {% endmacro %}
 
 {% macro trace_json(configure_args=[], build_targets=[], test=False, test_args=[]) %}
-    {% set json_dir = "/tmp/json-%s" % random_string() %}
+    {% set json_dir = "/tmp/json-%s" % counter_string() %}
 
     RUN git clone https://github.com/nlohmann/json.git {{ json_dir }}
 
