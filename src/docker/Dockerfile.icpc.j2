@@ -18,12 +18,9 @@ FROM json-ci-base-{{ base_codename }} AS json-ci-icpc-{{ version }}
             /opt/intel/oneapi/debugger
 
     RUN . /opt/intel/oneapi/setvars.sh
-    {# {{ min.trace_json(configure_args=["-DCMAKE_CXX_COMPILER=icpc", "-DJSON_FastTests=ON"], build_targets=["all"], test=True,
-                      test_args=["--exclude-regex", "test-unicode"]) }} #}
-
-    {{ min.trace_json(configure_args=["-DCMAKE_CXX_COMPILER=icpc", "-DJSON_FastTests=ON"], build_targets=["all"]) }}
-
-    RUN /tmp/json-*/build/tests/test-to_chars_cpp11 -s
+    {{ min.trace_json(configure_args=["-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_CXX_COMPILER=icpc",
+                                      "-DJSON_FastTests=ON"],
+                      build_targets=["all"], test=True, test_args=["--exclude-regex", "test-unicode"]) }}
 
     {{ min.remove_unused_files(["/opt/intel"]) }}
 
