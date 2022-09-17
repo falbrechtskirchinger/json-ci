@@ -30,9 +30,9 @@ RUN apt-get update && \
     rm -v cmake-3.24.1-Linux-x86_64.sh && \
     rm -v /usr/local/bin/ccmake /usr/local/bin/cmake-gui /usr/local/bin/cpack && \
     rm -rf /usr/local/doc/cmake /usr/local/man && \
-    apt-get purge -y --autoremove \
-        gnupg wget && \
-    apt-get clean && \
+    apt-mark auto gnupg wget && \
+    apt autoremove -y --purge && \
+    apt clean && \
     rm -rf /var/lib/apt/lists/*
 
 
@@ -61,7 +61,7 @@ RUN apt-get update && \
         strip "$f"; \
         fi \
         done && \
-    apt-get purge -y --autoremove \
-        binutils gnupg wget && \
-    apt-get clean && \
+    apt-mark auto binutils gnupg wget && \
+    apt autoremove -y --purge && \
+    apt clean && \
     rm -rf /var/lib/apt/lists/*

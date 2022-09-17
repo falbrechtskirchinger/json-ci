@@ -106,12 +106,12 @@
 {% endmacro %}
 
 {% macro cleanup() %}
-    # remove ephemeral packages
+    # mark ephemeral packages for removal
     {% if _state.apt_ephemeral_pkgs %}
-        RUN apt-get purge -y --autoremove
-            {{ _state.apt_ephemeral_pkgs | sort | join(" ") }}
+        RUN apt-mark auto {{ _state.apt_ephemeral_pkgs | sort | join(" ") }}
     {% endif %}
 
-    RUN apt-get clean
+    RUN apt autoremove -y --purge
+    RUN apt clean
     RUN rm -rf /var/lib/apt/lists/*
 {% endmacro %}

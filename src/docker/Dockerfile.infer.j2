@@ -3,7 +3,7 @@
 
 FROM json-ci-base-{{ base_codename }} AS json-ci-infer-{{ version }}
 
-{{ apt.install(["tzdata"], ephemeral=["g++", "wget", "xz-utils"]) }}
+{{ apt.install(["g++", "tzdata"], ephemeral=["wget", "xz-utils"]) }}
 
 {% set infer_url = "https://github.com/facebook/infer/releases/download/v{0}/infer-linux64-v{0}.tar.xz" %}
 {% set infer_url = infer_url.format(version) %}
@@ -16,7 +16,7 @@ RUN ln -sv {{ "%s/bin/infer" % infer_path }} /usr/local/bin/infer
 
 # remove unused files
 {% if minimize %}
-    {{ min.trace_json(configure_args=["-DCMAKE_CXX_COMPILER_FORCED=TRUE", "-DJSON_CI=ON"], build_targets=["ci_infer"]) }}
+    {{ min.trace_json(configure_args=["-DJSON_CI=ON"], build_targets=["ci_infer"]) }}
 
     {{ min.keep_files(["/usr/share/zoneinfo/Etc/UTC"]) }}
     {{ min.remove_unused_files(["/usr/share/zoneinfo", infer_path]) }}

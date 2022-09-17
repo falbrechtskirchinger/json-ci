@@ -30,9 +30,9 @@ RUN apt-get update && \
     rm -v cmake-3.24.1-Linux-x86_64.sh && \
     rm -v /usr/local/bin/ccmake /usr/local/bin/cmake-gui /usr/local/bin/cpack && \
     rm -rf /usr/local/doc/cmake /usr/local/man && \
-    apt-get purge -y --autoremove \
-        gnupg wget && \
-    apt-get clean && \
+    apt-mark auto gnupg wget && \
+    apt autoremove -y --purge && \
+    apt clean && \
     rm -rf /var/lib/apt/lists/*
 
 
@@ -77,7 +77,7 @@ RUN apt-get update && \
     rm \
         /tmp/.trace_log.0001 /tmp/.trace_log.0002 \
         /tmp/.keep_list.0003 /tmp/.remove_list.0004 && \
-    apt-get purge -y --autoremove \
-        strace wget && \
-    apt-get clean && \
+    apt-mark auto strace wget && \
+    apt autoremove -y --purge && \
+    apt clean && \
     rm -rf /var/lib/apt/lists/*

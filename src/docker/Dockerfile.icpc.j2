@@ -16,13 +16,22 @@ FROM json-ci-base-{{ base_codename }} AS json-ci-icpc-{{ version }}
     RUN rm -rf
             /opt/intel/oneapi/compiler/latest/linux/lib/oclfpga
             /opt/intel/oneapi/debugger
+            /opt/intel/oneapi/dev-utilities
+            /opt/intel/oneapi/tbb
+
+    # setvars.sh looks for */*/env/vars.sh to set the variables for each component
+    # we're only interested in the compiler
+    {# {{ min.keep_files(["/opt/intel/oneapi/compiler/latest/env/vars.sh"]) }}
+    {{ min.remove_unused_files(["/opt/intel/oneapi/*/*/env/vars.sh"]) }} #}
+
+    {{ min.trace(["/bin/sh", "-c", ". /opt/intel/oneapi/setvars.sh" | shell_quote]) }}
 
     RUN . /opt/intel/oneapi/setvars.sh
     {{ min.trace_json(configure_args=["-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_CXX_COMPILER=icpc",
-                                      "-DJSON_FastTests=ON"],
-                      build_targets=["all"], test=True, test_args=["--exclude-regex", "test-unicode"]) }}
+                                      "-DCMAKE_CXX_FLAGS_INIT=-fp-model=precise", "-DJSON_FastTests=ON"],
+                      build_targets=["all", "download_test_data"], test=True, test_args=["-E", "test-unicode"]) }}
 
-    {{ min.remove_unused_files(["/opt/intel"]) }}
+    {{ min.remove_unused_files(["/usr/lib/gcc/x86_64-linux-gnu", "/opt/intel"]) }}
 
     {{ min.strip_elf(["/opt/intel"]) }}
 {% endif %}

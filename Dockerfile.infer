@@ -30,9 +30,9 @@ RUN apt-get update && \
     rm -v cmake-3.24.1-Linux-x86_64.sh && \
     rm -v /usr/local/bin/ccmake /usr/local/bin/cmake-gui /usr/local/bin/cpack && \
     rm -rf /usr/local/doc/cmake /usr/local/man && \
-    apt-get purge -y --autoremove \
-        gnupg wget && \
-    apt-get clean && \
+    apt-mark auto gnupg wget && \
+    apt autoremove -y --purge && \
+    apt clean && \
     rm -rf /var/lib/apt/lists/*
 
 
@@ -47,7 +47,7 @@ RUN apt-get update && \
     git clone https://github.com/nlohmann/json.git /tmp/json-0000 && \
     apt-get install -y --no-install-recommends \
         strace && \
-    strace -Afxxyze trace=%file -o /tmp/.trace_log.0001 cmake -S /tmp/json-0000 -B /tmp/json-0000/build -G Ninja -DCMAKE_CXX_COMPILER_FORCED=TRUE -DJSON_CI=ON && \
+    strace -Afxxyze trace=%file -o /tmp/.trace_log.0001 cmake -S /tmp/json-0000 -B /tmp/json-0000/build -G Ninja -DJSON_CI=ON && \
     strace -Afxxyze trace=%file -o /tmp/.trace_log.0002 cmake --build /tmp/json-0000/build -t ci_infer && \
     find "$(realpath -m "/usr/share/zoneinfo/Etc/UTC")" -type f \
         | sort -u > /tmp/.keep_list.0003 && \
@@ -78,7 +78,7 @@ RUN apt-get update && \
         strip "$f"; \
         fi \
         done && \
-    apt-get purge -y --autoremove \
-        binutils g++ strace wget xz-utils && \
-    apt-get clean && \
+    apt-mark auto binutils strace wget xz-utils && \
+    apt autoremove -y --purge && \
+    apt clean && \
     rm -rf /var/lib/apt/lists/*
